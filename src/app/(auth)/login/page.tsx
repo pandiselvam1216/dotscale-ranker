@@ -38,11 +38,10 @@ export default function LoginPage() {
           .single();
 
         if (profile?.role === 'admin') {
-          router.push('/admin');
+          window.location.href = '/admin';
         } else {
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }
-        router.refresh();
       }
     } catch {
       setError('An unexpected error occurred');
