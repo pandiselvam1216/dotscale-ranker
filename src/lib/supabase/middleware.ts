@@ -55,15 +55,24 @@ export async function updateSession(request: NextRequest) {
   // Check admin role for admin routes
   if (user && isAdminRoute) {
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
+      console.log('Middleware admin check:', { userId: user.id, profile, error });
+
+      if (error || !profile || profile.role !== 'admin') {
         const url = request.nextUrl.clone();
         url.pathname = '/dashboard';
+        
+        let reason = 'unknown';
+        if (error) reason = `db_error_${error.message}`;
+        else if (!profile) reason = 'no_profile';
+        else if (profile.role !== 'admin') reason = `wrong_role_${profile.role}`;
+        
+        url.searchParams.set('admin_error', reason);
         return NextResponse.redirect(url);
       }
     } catch {

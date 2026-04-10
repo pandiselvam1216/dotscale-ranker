@@ -113,16 +113,22 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Create a security definer function to avoid infinite recursion on RLS
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT role = 'admin' FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER;
+
 -- =====================
 -- Profiles policies
 -- =====================
 CREATE POLICY "profiles_select_own" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "profiles_select_admin" ON public.profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "profiles_update_admin" ON public.profiles FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (true);
 
@@ -131,7 +137,7 @@ CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (true);
 -- =====================
 CREATE POLICY "searches_all_own" ON public.searches FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "searches_select_admin" ON public.searches FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- =====================
@@ -144,7 +150,7 @@ CREATE POLICY "search_results_insert" ON public.search_results FOR INSERT WITH C
   EXISTS (SELECT 1 FROM public.searches WHERE id = search_id AND user_id = auth.uid())
 );
 CREATE POLICY "search_results_select_admin" ON public.search_results FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- =====================
@@ -163,7 +169,7 @@ CREATE POLICY "rank_checks_insert" ON public.rank_checks FOR INSERT WITH CHECK (
 CREATE POLICY "api_logs_insert_own" ON public.api_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "api_logs_select_own" ON public.api_logs FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "api_logs_select_admin" ON public.api_logs FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- =====================
@@ -176,7 +182,7 @@ CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE USIN
   user_id = auth.uid() OR is_broadcast = TRUE
 );
 CREATE POLICY "notifications_insert_admin" ON public.notifications FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- =====================
@@ -184,7 +190,7 @@ CREATE POLICY "notifications_insert_admin" ON public.notifications FOR INSERT WI
 -- =====================
 CREATE POLICY "sessions_all_own" ON public.user_sessions FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "sessions_select_admin" ON public.user_sessions FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- ============================================
