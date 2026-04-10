@@ -36,39 +36,50 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadStats() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        // Small delay to avoid auth token lock race with layout component
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
 
-      // Fetch searches
-      const { data: searches, count } = await supabase
-        .from('searches')
-        .select('id, keyword, created_at', { count: 'exact' })
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        // Fetch searches
+        const { data: searches, count } = await supabase
+          .from('searches')
+          .select('id, keyword, created_at', { count: 'exact' })
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
 
-      // Fetch rank checks
-      const { data: rankChecks } = await supabase
-        .from('rank_checks')
-        .select('search_id, is_listed, position')
-        .in('search_id', (searches || []).map(s => s.id));
+        // Fetch rank checks
+        const searchIds = (searches || []).map(s => s.id);
+        const { data: rankChecks } = searchIds.length > 0
+          ? await supabase
+              .from('rank_checks')
+              .select('search_id, is_listed, position')
+              .in('search_id', searchIds)
+          : { data: [] };
 
-      const listedCount = rankChecks?.filter(r => r.is_listed).length || 0;
-      const notListedCount = rankChecks?.filter(r => !r.is_listed).length || 0;
+        const listedCount = rankChecks?.filter(r => r.is_listed).length || 0;
+        const notListedCount = rankChecks?.filter(r => !r.is_listed).length || 0;
 
-      const recentSearches = (searches || []).map(s => ({
-        ...s,
-        rank_check: rankChecks?.find(r => r.search_id === s.id),
-      }));
+        const recentSearches = (searches || []).map(s => ({
+          ...s,
+          rank_check: rankChecks?.find(r => r.search_id === s.id),
+        }));
 
-      setStats({
-        totalSearches: count || 0,
-        listedCount,
-        notListedCount,
-        recentSearches,
-      });
-      setLoading(false);
+        setStats({
+          totalSearches: count || 0,
+          listedCount,
+          notListedCount,
+          recentSearches,
+        });
+      } catch (err) {
+        console.warn('Dashboard stats load error:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     loadStats();
   }, []);
