@@ -33,6 +33,12 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup');
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/search') || request.nextUrl.pathname.startsWith('/history');
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
+
+  // Don't protect API routes (they handle their own auth)
+  if (isApiRoute) {
+    return supabaseResponse;
+  }
 
   if (!user && (isDashboardRoute || isAdminRoute)) {
     const url = request.nextUrl.clone();
@@ -48,13 +54,20 @@ export async function updateSession(request: NextRequest) {
 
   // Check admin role for admin routes
   if (user && isAdminRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-    if (profile?.role !== 'admin') {
+      if (!profile || profile.role !== 'admin') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // If profiles table doesn't exist, block admin access
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);

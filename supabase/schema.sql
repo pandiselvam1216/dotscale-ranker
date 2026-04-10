@@ -1,5 +1,6 @@
 -- ============================================
 -- DotScale Ranker - Supabase Schema
+-- Run this in Supabase SQL Editor
 -- ============================================
 
 -- Profiles table (extends auth.users)
@@ -72,7 +73,8 @@ CREATE TABLE IF NOT EXISTS public.user_sessions (
   last_active_at TIMESTAMPTZ DEFAULT NOW(),
   ended_at TIMESTAMPTZ,
   duration_seconds INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT TRUE
+  is_active BOOLEAN DEFAULT TRUE,
+  UNIQUE(user_id)
 );
 
 -- ============================================
@@ -99,36 +101,89 @@ ALTER TABLE public.api_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 
--- Profiles: users can read own, admin can read all
-CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admin can view all profiles" ON public.profiles FOR SELECT USING (
+-- Drop existing policies (in case of re-run)
+DO $$
+DECLARE
+  pol RECORD;
+BEGIN
+  FOR pol IN
+    SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, pol.tablename);
+  END LOOP;
+END $$;
+
+-- =====================
+-- Profiles policies
+-- =====================
+CREATE POLICY "profiles_select_own" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "profiles_select_admin" ON public.profiles FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "profiles_update_admin" ON public.profiles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (true);
+
+-- =====================
+-- Searches policies
+-- =====================
+CREATE POLICY "searches_all_own" ON public.searches FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "searches_select_admin" ON public.searches FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
--- Searches: users own their searches
-CREATE POLICY "Users can manage own searches" ON public.searches FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Admin can view all searches" ON public.searches FOR SELECT USING (
+-- =====================
+-- Search results policies
+-- =====================
+CREATE POLICY "search_results_select" ON public.search_results FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.searches WHERE id = search_id AND user_id = auth.uid())
+);
+CREATE POLICY "search_results_insert" ON public.search_results FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.searches WHERE id = search_id AND user_id = auth.uid())
+);
+CREATE POLICY "search_results_select_admin" ON public.search_results FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
--- Search results: accessible via search ownership
-CREATE POLICY "Users can view own search results" ON public.search_results FOR SELECT USING (
+-- =====================
+-- Rank checks policies
+-- =====================
+CREATE POLICY "rank_checks_all_own" ON public.rank_checks FOR ALL USING (
   EXISTS (SELECT 1 FROM public.searches WHERE id = search_id AND user_id = auth.uid())
 );
-CREATE POLICY "Users can insert search results" ON public.search_results FOR INSERT WITH CHECK (
+CREATE POLICY "rank_checks_insert" ON public.rank_checks FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.searches WHERE id = search_id AND user_id = auth.uid())
 );
 
--- Notifications: users can read own
-CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (
+-- =====================
+-- API logs policies
+-- =====================
+CREATE POLICY "api_logs_insert_own" ON public.api_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "api_logs_select_own" ON public.api_logs FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "api_logs_select_admin" ON public.api_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- =====================
+-- Notifications policies
+-- =====================
+CREATE POLICY "notifications_select_own" ON public.notifications FOR SELECT USING (
   user_id = auth.uid() OR is_broadcast = TRUE
 );
-CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE USING (
+  user_id = auth.uid() OR is_broadcast = TRUE
+);
+CREATE POLICY "notifications_insert_admin" ON public.notifications FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
 
--- User sessions: users own their sessions
-CREATE POLICY "Users can manage own sessions" ON public.user_sessions FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Admin can view all sessions" ON public.user_sessions FOR SELECT USING (
+-- =====================
+-- User sessions policies
+-- =====================
+CREATE POLICY "sessions_all_own" ON public.user_sessions FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "sessions_select_admin" ON public.user_sessions FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -137,16 +192,23 @@ CREATE POLICY "Admin can view all sessions" ON public.user_sessions FOR SELECT U
 -- ============================================
 
 -- Auto-create profile on user signup
+-- Automatically sets role to 'admin' for admin@dotscale.com
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
-  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+    CASE WHEN NEW.email = 'admin@dotscale.com' THEN 'admin' ELSE 'user' END
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
@@ -159,6 +221,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER on_profile_updated
+DROP TRIGGER IF EXISTS on_profile_updated ON public.profiles;
+CREATE TRIGGER on_profile_updated
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();

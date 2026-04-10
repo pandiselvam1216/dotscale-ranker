@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
@@ -38,6 +38,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fillAdminCredentials = () => {
+    setEmail('admin@dotscale.com');
+    setPassword('admin');
   };
 
   return (
@@ -118,7 +123,33 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#9ca3af', marginTop: '24px' }}>
+        {/* Admin Quick Login */}
+        <button
+          type="button"
+          onClick={fillAdminCredentials}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            width: '100%',
+            marginTop: '16px',
+            padding: '12px',
+            background: '#fffbeb',
+            border: '1.5px solid #fde68a',
+            borderRadius: '12px',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            color: '#92400e',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <Shield style={{ width: '16px', height: '16px' }} />
+          Login as Admin
+        </button>
+
+        <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#9ca3af', marginTop: '20px' }}>
           Don&apos;t have an account?{' '}
           <Link href="/signup" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
             Create one
