@@ -36,9 +36,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200/60" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingUp style={{ width: '20px', height: '20px', color: 'white' }} />
-            </div>
+            <img src="/main-logo.png" alt="DotScale" style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             <span style={{ fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Poppins, sans-serif' }}>
               <span className="gradient-text">DotScale</span> Ranker
             </span>
@@ -78,8 +76,11 @@ export default function LandingPage() {
           style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}
         >
           <motion.div variants={fadeInUp} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eef2ff', color: '#4338ca', fontSize: '0.875rem', fontWeight: 600, padding: '8px 20px', borderRadius: '100px', marginBottom: '28px', border: '1px solid #e0e7ff' }}>
-            <Zap style={{ width: '16px', height: '16px' }} />
-            Powered by AI Search Intelligence
+            <img src="/gemini-logo.png" alt="Gemini" style={{ width: '16px', height: '16px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            Powered by Gemini flash
+            <span style={{ margin: '0 4px', color: '#a5b4fc' }}>|</span>
+            Developed by NeuraGlobal
+            <img src="/neuraglobal-logo.png" alt="NeuraGlobal" style={{ width: '16px', height: '16px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </motion.div>
           
           <motion.h1 variants={fadeInUp} style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1.15, marginBottom: '24px', color: '#111827' }}>

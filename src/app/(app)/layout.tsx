@@ -114,9 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 fixed top-0 left-0 bottom-0 z-30">
         <div className="p-6 border-b border-gray-100">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
+            <img src="/main-logo.jpg" alt="DotScale" className="w-9 h-9 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             <span className="text-lg font-bold font-[Poppins]">
               <span className="gradient-text">DotScale</span>
             </span>
@@ -130,11 +128,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
                     ? 'bg-indigo-50 text-indigo-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : ''}`} />
                 {item.label}
@@ -146,11 +143,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {user?.role === 'admin' && (
             <Link
               href="/admin"
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                pathname.startsWith('/admin')
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${pathname.startsWith('/admin')
                   ? 'bg-amber-50 text-amber-700'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+                }`}
             >
               <Shield className="w-5 h-5" />
               Admin Panel
@@ -198,9 +194,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <div className="p-6 flex items-center justify-between border-b border-gray-100">
                 <Link href="/dashboard" className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
+                  <img src="/main-logo.png" alt="DotScale" className="w-9 h-9 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                   <span className="text-lg font-bold font-[Poppins] gradient-text">DotScale</span>
                 </Link>
                 <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -215,9 +209,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                        isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       <item.icon className="w-5 h-5" />
                       {item.label}
@@ -282,9 +275,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <button
                           key={n.id}
                           onClick={() => handleMarkRead(n.id)}
-                          className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                            !n.is_read ? 'bg-indigo-50/50' : ''
-                          }`}
+                          className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${!n.is_read ? 'bg-indigo-50/50' : ''
+                            }`}
                         >
                           <p className="text-sm font-medium">{n.title}</p>
                           <p className="text-xs text-gray-500 mt-1">{n.message}</p>
