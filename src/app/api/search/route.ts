@@ -6,7 +6,19 @@ import { checkRateLimit } from '@/lib/rate-limit';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Explicitly parse Bearer token from header because Next.js chunked cookies can drift on fast signouts
+    const authHeader = request.headers.get('authorization');
+    let user;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const { data } = await supabase.auth.getUser(token);
+      user = data.user;
+    } else {
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -47,9 +48,15 @@ export default function SearchPage() {
     setSearchId(null);
 
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch('/api/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ keyword: keyword.trim() }),
       });
 
@@ -76,9 +83,15 @@ export default function SearchPage() {
     setRankCheck(null);
 
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch('/api/rank-check', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ search_id: searchId, target_url: targetUrl.trim() }),
       });
 
