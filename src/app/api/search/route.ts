@@ -87,11 +87,15 @@ export async function POST(request: NextRequest) {
     // Save search to DB (gracefully handle missing table)
     let searchId: string | null = null;
     try {
-      const { data: search } = await supabase
+      const { data: search, error: searchError } = await supabase
         .from('searches')
         .insert({ user_id: user.id, keyword: sanitizedKeyword })
         .select('id')
         .single();
+        
+      if (searchError) {
+        console.error('Failed to insert search:', searchError);
+      }
 
       searchId = search?.id || null;
 
@@ -105,15 +109,21 @@ export async function POST(request: NextRequest) {
           snippet: r.snippet,
         }));
 
-        await supabase.from('search_results').insert(resultRows);
+        const { error: resultsError } = await supabase.from('search_results').insert(resultRows);
+        if (resultsError) {
+          console.error('Failed to insert search_results:', resultsError);
+        }
       }
 
       // Log API usage
-      await supabase.from('api_logs').insert({
+      const { error: apiLogError } = await supabase.from('api_logs').insert({
         user_id: user.id,
         endpoint: 'gemini/search',
         tokens_used: estimateTokensUsed(sanitizedKeyword),
       });
+      if (apiLogError) {
+        console.error('Failed to insert api_logs:', apiLogError);
+      }
     } catch {
       // DB save failed but we still have results — continue
       console.warn('Failed to save search to database');

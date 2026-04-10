@@ -231,3 +231,27 @@ DROP TRIGGER IF EXISTS on_profile_updated ON public.profiles;
 CREATE TRIGGER on_profile_updated
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- Track total time spent via last_seen_at heartbeat differences
+CREATE OR REPLACE FUNCTION public.update_session_duration()
+RETURNS TRIGGER AS $$
+DECLARE
+  diff_seconds INTEGER;
+BEGIN
+  IF NEW.last_seen_at > OLD.last_seen_at THEN
+    diff_seconds := EXTRACT(EPOCH FROM (NEW.last_seen_at - OLD.last_seen_at));
+    -- Only add continuous time (e.g. heartbeat is 1 min, so anything < 5 min is continuous)
+    IF diff_seconds < 300 THEN
+      NEW.total_session_seconds = COALESCE(OLD.total_session_seconds, 0) + diff_seconds;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_profile_last_seen_updated ON public.profiles;
+CREATE TRIGGER on_profile_last_seen_updated
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  WHEN (NEW.last_seen_at IS DISTINCT FROM OLD.last_seen_at)
+  EXECUTE FUNCTION public.update_session_duration();
