@@ -50,6 +50,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     loadUser();
   }, [loadUser]);
 
+  // Heartbeat for session tracking in Admin Panel
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', authUser.id);
+      }
+    }, 60000); // every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();

@@ -66,10 +66,18 @@ Make the results realistic and diverse, including major brands, blogs, review si
 
   const textContent = await callGeminiWithRetry(apiKey, prompt);
 
-  // Parse the JSON response, handling potential markdown code blocks
+  // Parse the JSON response, handling potential markdown and conversational text
   let cleanedText = textContent.trim();
-  if (cleanedText.startsWith('```')) {
-    cleanedText = cleanedText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+  const startIdx = cleanedText.indexOf('[');
+  const endIdx = cleanedText.lastIndexOf(']');
+  
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+  } else {
+    // Fallback markdown strip if brackets aren't found for some reason
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
   }
 
   try {
