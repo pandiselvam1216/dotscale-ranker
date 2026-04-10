@@ -32,11 +32,11 @@ export default function AuthLayout({
         {children}
         
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eef2ff', color: '#4338ca', fontSize: '0.875rem', fontWeight: 600, padding: '8px 20px', borderRadius: '100px', border: '1px solid #e0e7ff', whiteSpace: 'nowrap' }}>
+          <div className="gemini-badge">
             <img src="/gemini-logo.png" alt="Gemini" style={{ width: '16px', height: '16px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-            Powered by Gemini flash
-            <span style={{ margin: '0 4px', color: '#a5b4fc' }}>|</span>
-            Developed by NeuraGlobal
+            <span>Powered by Gemini flash</span>
+            <span style={{ color: '#a5b4fc', margin: '0 2px' }}>|</span>
+            <span>Developed by NeuraGlobal</span>
             <img src="/neuraglobal-logo.png" alt="NeuraGlobal" style={{ width: '16px', height: '16px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           </div>
         </div>
