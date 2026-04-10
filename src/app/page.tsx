@@ -75,7 +75,7 @@ export default function LandingPage() {
           variants={stagger}
           style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}
         >
-          <motion.div variants={fadeInUp} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eef2ff', color: '#4338ca', fontSize: '0.875rem', fontWeight: 600, padding: '8px 20px', borderRadius: '100px', marginBottom: '28px', border: '1px solid #e0e7ff' }}>
+          <motion.div variants={fadeInUp} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eef2ff', color: '#4338ca', fontSize: '0.875rem', fontWeight: 600, padding: '8px 20px', borderRadius: '100px', marginBottom: '28px', border: '1px solid #e0e7ff', whiteSpace: 'nowrap' }}>
             <img src="/gemini-logo.png" alt="Gemini" style={{ width: '16px', height: '16px', objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             Powered by Gemini flash
             <span style={{ margin: '0 4px', color: '#a5b4fc' }}>|</span>
