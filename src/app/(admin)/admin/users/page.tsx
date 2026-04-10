@@ -39,6 +39,10 @@ export default function AdminUsersPage() {
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
   const [saving, setSaving] = useState(false);
+  
+  const [viewActivityUser, setViewActivityUser] = useState<UserProfile | null>(null);
+  const [userActivity, setUserActivity] = useState<{ searches: any[]; apiLogs: any[] }>({ searches: [], apiLogs: [] });
+  const [loadingActivity, setLoadingActivity] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -58,6 +62,22 @@ export default function AdminUsersPage() {
     const interval = setInterval(fetchUsers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleViewActivity = async (user: UserProfile) => {
+    setViewActivityUser(user);
+    setLoadingActivity(true);
+    try {
+      const res = await fetch(`/api/admin/users/activity?userId=${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserActivity(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
 
   const handleBlock = async (userId: string, block: boolean) => {
     await fetch('/api/admin/users', {
@@ -243,6 +263,13 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => handleViewActivity(u)}
+                          className="p-2 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="View Activity"
+                        >
+                          <Search className="w-4 h-4 text-amber-600" />
+                        </button>
+                        <button
                           onClick={() => {
                             setEditUser(u);
                             setEditName(u.full_name);
@@ -349,6 +376,86 @@ export default function AdminUsersPage() {
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Save Changes
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {/* Activity Modal */}
+        {viewActivityUser && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+              onClick={() => setViewActivityUser(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-2xl max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <div>
+                  <h3 className="text-xl font-bold font-[Poppins]">User Activity</h3>
+                  <p className="text-sm text-gray-500 mt-1">{viewActivityUser.email}</p>
+                </div>
+                <button onClick={() => setViewActivityUser(null)} className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+                {loadingActivity ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-4" />
+                    <p className="text-gray-500">Loading activity...</p>
+                  </div>
+                ) : userActivity.searches.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900">No searches yet</h3>
+                    <p className="text-gray-500 text-sm mt-1">This user hasn't generated any searches.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Recent Searches</h4>
+                    {userActivity.searches.map((search) => (
+                      <div key={search.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{search.keyword}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(search.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-1 rounded-md">
+                          Search
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {userActivity.apiLogs.length > 0 && (
+                      <div className="mt-8">
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Recent API Consumptions</h4>
+                        <div className="space-y-3">
+                          {userActivity.apiLogs.slice(0, 10).map((log, idx) => (
+                            <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 text-sm">
+                              <span className="text-gray-600 font-mono text-xs">{log.endpoint}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-400">{new Date(log.created_at).toLocaleTimeString()}</span>
+                                <span className="flex items-center gap-1 text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">
+                                  <Zap className="w-3 h-3" /> {log.tokens_used}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
