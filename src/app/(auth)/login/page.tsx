@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   const fillAdminCredentials = () => {
     setEmail('admin@dotscale.com');
-    setPassword('admin');
+    setPassword('admin123');
   };
 
   return (

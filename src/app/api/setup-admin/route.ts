@@ -21,7 +21,7 @@ export async function POST() {
     });
 
     const ADMIN_EMAIL = 'admin@dotscale.com';
-    const ADMIN_PASSWORD = 'admin';
+    const ADMIN_PASSWORD = 'admin123';
 
     // Try to sign up the admin user
     const { data, error } = await supabase.auth.signUp({
