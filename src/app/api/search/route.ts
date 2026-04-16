@@ -87,24 +87,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch from Gemini
-    let results;
+    let aiResponse;
     try {
-      results = await fetchSearchResults(sanitizedKeyword);
+      aiResponse = await fetchSearchResults(sanitizedKeyword);
     } catch (geminiError) {
       console.error('Gemini API error:', geminiError);
       const message = geminiError instanceof Error ? geminiError.message : 'Gemini API failed';
       return NextResponse.json({ error: message }, { status: 502 });
     }
 
+    const { results, aiOverview } = aiResponse;
+
     // Save search to DB (gracefully handle missing table)
     let searchId: string | null = null;
     try {
-      const { data: search, error: searchError } = await supabase
+      // First attempt with ai_overview
+      let { data: search, error: searchError } = await supabase
         .from('searches')
-        .insert({ user_id: user.id, keyword: sanitizedKeyword })
+        .insert({ 
+          user_id: user.id, 
+          keyword: sanitizedKeyword,
+          ai_overview: aiOverview 
+        })
         .select('id')
         .single();
         
+      if (searchError && searchError.message.includes('ai_overview')) {
+        console.warn('ai_overview column missing, retrying without it...');
+        const retry = await supabase
+          .from('searches')
+          .insert({ 
+            user_id: user.id, 
+            keyword: sanitizedKeyword 
+          })
+          .select('id')
+          .single();
+        search = retry.data;
+        searchError = retry.error;
+      }
+
       if (searchError) {
         console.error('Failed to insert search:', searchError);
       }
@@ -136,13 +157,14 @@ export async function POST(request: NextRequest) {
       if (apiLogError) {
         console.error('Failed to insert api_logs:', apiLogError);
       }
-    } catch {
+    } catch (err) {
       // DB save failed but we still have results — continue
-      console.warn('Failed to save search to database');
+      console.warn('Failed to save search to database:', err);
     }
 
     return NextResponse.json({
       results,
+      aiOverview,
       search_id: searchId,
       cached: false,
     });

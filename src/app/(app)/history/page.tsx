@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { Search, CheckCircle2, XCircle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import AIAttributionAudit from '@/components/search/AIAttributionAudit';
+import { AIOverview } from '@/lib/gemini';
 
 interface SearchHistory {
   id: string;
   keyword: string;
   created_at: string;
+  ai_overview?: AIOverview;
   results: Array<{
     position: number;
     title: string;
@@ -36,7 +40,7 @@ export default function HistoryPage() {
 
       const { data: searchData } = await supabase
         .from('searches')
-        .select('id, keyword, created_at')
+        .select('id, keyword, created_at, ai_overview')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -75,118 +79,180 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-[Poppins]">Search History</h1>
-        <p className="text-gray-500 mt-1">View all your past searches and ranking results.</p>
+    <div className="max-w-5xl mx-auto space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight font-[Poppins]">
+          Search <span className="text-indigo-600">History</span>
+        </h1>
+        <p className="text-gray-500 text-lg font-medium">Review and audit your past search simulations powered by Gemini Flash AI.</p>
       </div>
 
       {loading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 p-6">
-              <div className="shimmer h-5 w-48 mb-3" />
-              <div className="shimmer h-3 w-32" />
+        <div className="grid grid-cols-1 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-3xl p-6 border border-gray-100 flex items-center gap-4">
+              <div className="shimmer w-12 h-12 rounded-2xl" />
+              <div className="flex-1 space-y-2">
+                <div className="shimmer h-5 w-48 rounded-lg" />
+                <div className="shimmer h-4 w-32 rounded-lg" />
+              </div>
             </div>
           ))}
         </div>
       ) : searches.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-          <Search className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No search history</h3>
-          <p className="text-gray-500">Your search history will appear here once you perform searches.</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-[3rem] border border-dashed border-gray-200 p-20 text-center shadow-sm"
+        >
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search className="w-10 h-10 text-gray-200" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2 font-[Poppins]">Audit history is empty</h3>
+          <p className="text-gray-500 max-w-xs mx-auto mb-8">Perform your first search simulation to see it appear here.</p>
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95 shadow-lg shadow-indigo-100"
+          >
+            Start Searching
+          </Link>
+        </motion.div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-4">
           {searches.map((search, i) => (
             <motion.div
               key={search.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-sm transition-all"
+              className={`bg-white rounded-[2rem] border transition-all duration-300 overflow-hidden ${
+                expandedId === search.id ? 'border-indigo-200 shadow-xl shadow-indigo-500/5 ring-4 ring-indigo-50/50' : 'border-gray-100 hover:border-gray-200 shadow-sm'
+              }`}
             >
               <button
                 onClick={() => setExpandedId(expandedId === search.id ? null : search.id)}
-                className="w-full flex items-center gap-4 p-5 text-left"
+                className="w-full flex flex-col md:flex-row md:items-center gap-4 p-6 text-left group"
               >
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                  <Search className="w-5 h-5 text-indigo-600" />
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                  expandedId === search.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'
+                }`}>
+                  <Search className="w-6 h-6" />
                 </div>
+                
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{search.keyword}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    <Calendar className="w-3 h-3" />
+                  <p className="text-lg font-bold text-gray-900 truncate tracking-tight">{search.keyword}</p>
+                  <p className="text-sm text-gray-400 flex items-center gap-2 mt-0.5 font-medium">
+                    <Calendar className="w-3.5 h-3.5" />
                     {new Date(search.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
                       month: 'short',
                       day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                      year: 'numeric',
+                    })} at {new Date(search.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
+
                 <div className="flex items-center gap-3">
-                  {search.rank_check && (
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        search.rank_check.is_listed
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-red-50 text-red-700'
-                      }`}
-                    >
+                  {search.rank_check ? (
+                    <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-sm font-bold shadow-sm ${
+                      search.rank_check.is_listed
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50'
+                        : 'bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50'
+                    }`}>
                       {search.rank_check.is_listed ? (
-                        <span className="flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> #{search.rank_check.position}
-                        </span>
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          Ranked #{search.rank_check.position}
+                        </>
                       ) : (
-                        <span className="flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> Not Listed
-                        </span>
+                        <>
+                          <XCircle className="w-4 h-4" />
+                          Unlisted
+                        </>
                       )}
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
-                    {search.results.length} results
-                  </span>
-                  {expandedId === search.id ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                    </div>
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <div className="px-3 py-1.5 bg-gray-50 rounded-xl text-xs font-bold text-gray-400 border border-gray-100">
+                      No Audit
+                    </div>
                   )}
+                  
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                    {expandedId === search.id ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
+                  </div>
                 </div>
               </button>
 
-              {expandedId === search.id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  className="border-t border-gray-100 px-5 py-4"
-                >
-                  {search.rank_check && (
-                    <div className={`mb-4 p-4 rounded-lg ${
-                      search.rank_check.is_listed ? 'bg-emerald-50' : 'bg-red-50'
-                    }`}>
-                      <p className="text-sm font-medium">
-                        Target: {search.rank_check.target_url}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">{search.rank_check.feedback}</p>
-                    </div>
-                  )}
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {search.results.map((result) => (
-                      <div key={result.position} className="text-sm">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs text-gray-400 font-mono">#{result.position}</span>
-                          <span className="text-xs text-green-700 truncate">{result.url}</span>
+              <AnimatePresence>
+                {expandedId === search.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="border-t border-indigo-50 overflow-hidden"
+                  >
+                    <div className="p-8 space-y-8 bg-neutral-50/50">
+                      {search.ai_overview && (
+                        <div className="bg-white rounded-[2rem] border border-indigo-100 p-8 shadow-xl shadow-indigo-500/5">
+                          <AIAttributionAudit 
+                            data={search.ai_overview} 
+                            activeSourcePosition={null} 
+                            onHoverSource={() => {}} 
+                          />
                         </div>
-                        <p className="text-indigo-600 font-medium">{result.title}</p>
-                        <p className="text-gray-500 text-xs mt-0.5">{result.snippet}</p>
+                      )}
+                      {search.rank_check && (
+                        <div className={`p-6 rounded-[1.5rem] border relative overflow-hidden ${
+                          search.rank_check.is_listed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100 shadow-sm'
+                        }`}>
+                          <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 opacity-10 rounded-full blur-2xl ${
+                            search.rank_check.is_listed ? 'bg-emerald-500' : 'bg-rose-500'
+                          }`} />
+                          
+                          <div className="relative z-10 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rank Audit Result</p>
+                              {search.rank_check.is_listed && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Optimized</span>}
+                            </div>
+                            <p className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                              Target Domain: <span className="text-indigo-600 select-all tracking-tight">{search.rank_check.target_url}</span>
+                            </p>
+                            <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100">
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Expert Feedback</p>
+                              <p className="text-sm text-gray-600 font-medium leading-relaxed italic">&ldquo;{search.rank_check.feedback}&rdquo;</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Full Result Set ({search.results.length})</h4>
+                          <span className="text-[10px] font-bold text-gray-400">POSITIONS 1-20</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-indigo-200">
+                          {search.results.map((result) => (
+                            <div key={result.position} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm group/item hover:border-indigo-200 transition-all">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-[11px] font-black text-gray-400 group-hover/item:bg-indigo-600 group-hover/item:text-white transition-colors">
+                                  {result.position}
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-600 truncate flex-1 uppercase tracking-tight">{new URL(result.url).hostname}</span>
+                              </div>
+                              <p className="text-sm font-bold text-gray-900 group-hover/item:text-indigo-600 transition-colors line-clamp-1">{result.title}</p>
+                              <p className="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-normal">{result.snippet}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ))}
         </div>

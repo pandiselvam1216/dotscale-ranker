@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Target,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/auth-store';
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/search', icon: Search, label: 'Search' },
   { href: '/history', icon: History, label: 'History' },
+  { href: '/auditor', icon: Target, label: 'Auditor' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -109,12 +111,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-neutral-50 flex">
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.03),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.02),transparent_50%)] pointer-events-none" />
+
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 fixed top-0 left-0 bottom-0 z-30">
         <div className="p-6 border-b border-gray-100">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <img src="/main-logo.jpg" alt="DotScale" className="w-9 h-9 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <img src="/main-logo.png" alt="DotScale" className="w-9 h-9 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             <span className="text-lg font-bold font-[Poppins]">
               <span className="gradient-text">DotScale</span>
             </span>
@@ -129,8 +133,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
               >
                 <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : ''}`} />
@@ -144,8 +148,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               href="/admin"
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${pathname.startsWith('/admin')
-                  ? 'bg-amber-50 text-amber-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-amber-50 text-amber-700'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
             >
               <Shield className="w-5 h-5" />
@@ -154,19 +158,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-sm font-bold">
+        <div className="p-4 border-t border-gray-100/50">
+          <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50/50 rounded-2xl border border-gray-100/50 mb-2">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold shadow-sm shadow-indigo-100">
               {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.full_name || 'User'}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate tracking-tight">{user?.full_name || 'User'}</p>
+              <p className="text-[11px] text-gray-500 truncate font-medium uppercase tracking-wider">{user?.role || 'Member'}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full px-4 py-2.5 mt-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -223,6 +227,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     Admin Panel
                   </Link>
                 )}
+                
               </nav>
             </motion.aside>
           </>
@@ -230,9 +235,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1 lg:ml-64 relative">
         {/* Header */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center px-6 gap-4">
+        <header className="sticky top-0 z-20 bg-white/60 backdrop-blur-md border-b border-gray-100/80 h-16 flex items-center px-6 gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
@@ -246,11 +251,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="relative">
             <button
               onClick={() => setNotifOpen(!notifOpen)}
-              className="relative p-2.5 hover:bg-gray-100 rounded-xl transition-colors"
+              className={`relative p-2.5 rounded-xl transition-all duration-300 border ${
+                notifOpen ? 'bg-white shadow-sm border-gray-200' : 'hover:bg-gray-100 active:scale-95 border-transparent'
+              }`}
             >
-              <Bell className="w-5 h-5 text-gray-600" />
+              <Bell className={`w-5 h-5 transition-colors ${notifOpen ? 'text-indigo-600' : 'text-gray-600'}`} />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-tr from-rose-500 to-pink-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold border-2 border-white">
                   {unreadCount}
                 </span>
               )}
