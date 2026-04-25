@@ -20,6 +20,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNotificationStore } from '@/stores/notification-store';
+import NetworkStatus from '@/components/NetworkStatus';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -37,43 +38,52 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { notifications, unreadCount, setNotifications, markAsRead } = useNotificationStore();
 
   const loadUserData = useCallback(async () => {
-    const supabase = createClient();
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-      if (profile) {
-        setUser({
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name,
-          role: profile.role,
-        });
+    try {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (profileError) throw profileError;
+
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            full_name: profile.full_name,
+            role: profile.role,
+          });
+        }
+
+        // Load notifications
+        const { data: notifs, error: notifError } = await supabase
+          .from('notifications')
+          .select('*')
+          .or(`user_id.eq.${authUser.id},is_broadcast.eq.true`)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (notifs) {
+          setNotifications(notifs);
+        }
+
+        // Track session activity
+        await supabase.from('user_sessions').upsert({
+          user_id: authUser.id,
+          last_active_at: new Date().toISOString(),
+          is_active: true,
+        }, { onConflict: 'user_id' }).select();
+
+        // Update last_seen_at
+        await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', authUser.id);
       }
-
-      // Load notifications
-      const { data: notifs } = await supabase
-        .from('notifications')
-        .select('*')
-        .or(`user_id.eq.${authUser.id},is_broadcast.eq.true`)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (notifs) {
-        setNotifications(notifs);
-      }
-
-      // Track session activity
-      await supabase.from('user_sessions').upsert({
-        user_id: authUser.id,
-        last_active_at: new Date().toISOString(),
-        is_active: true,
-      }, { onConflict: 'user_id' }).select();
-
-      // Update last_seen_at
-      await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', authUser.id);
+    } catch (err) {
+      console.error('Error loading layout data:', err);
+      // Fail silently for user experience, but log for debugging
     }
   }, [setUser, setNotifications]);
 
@@ -111,7 +121,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="h-screen bg-neutral-50 flex overflow-hidden">
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.03),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.02),transparent_50%)] pointer-events-none" />
 
       {/* Sidebar - Desktop */}
@@ -227,15 +237,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     Admin Panel
                   </Link>
                 )}
-                
               </nav>
+
+              <div className="p-4 border-t border-gray-100">
+                <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50/50 rounded-2xl border border-gray-100/50 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold shadow-sm shadow-indigo-100">
+                    {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate tracking-tight">{user?.full_name || 'User'}</p>
+                    <p className="text-[11px] text-gray-500 truncate font-medium uppercase tracking-wider">{user?.role || 'Member'}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64 relative">
+      <div className="flex-1 lg:ml-64 relative flex flex-col h-full overflow-hidden">
         {/* Header */}
         <header className="sticky top-0 z-20 bg-white/60 backdrop-blur-md border-b border-gray-100/80 h-16 flex items-center px-6 gap-4">
           <button
@@ -246,6 +274,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex-1" />
+
+          <div className="flex items-center gap-2">
+            <NetworkStatus />
+          </div>
 
           {/* Notifications */}
           <div className="relative">
@@ -301,7 +333,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
           <motion.div
             key={pathname}
             initial={{ opacity: 0, y: 10 }}

@@ -72,9 +72,9 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-[Poppins]">Notifications</h1>
-        <p className="text-gray-500 mt-1">Send notifications to individual users or broadcast to everyone.</p>
+      <div className="mb-6 sm:mb-8 text-center sm:text-left">
+        <h1 className="text-2xl sm:text-3xl font-bold font-[Poppins]">Notifications</h1>
+        <p className="text-sm text-gray-500 mt-1">Send notifications to individual users or broadcast to everyone.</p>
       </div>
 
       {/* Mode Toggle */}
@@ -107,7 +107,7 @@ export default function AdminNotificationsPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-100 p-6"
+        className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-6"
       >
         <form onSubmit={handleSend} className="space-y-5">
           {mode === 'single' && (
@@ -122,7 +122,7 @@ export default function AdminNotificationsPage() {
                 <option value="">Choose a user...</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.full_name || 'Unnamed'} ({u.email})
+                    {(u.full_name || 'Unnamed').slice(0, 20)}{u.full_name && u.full_name.length > 20 ? '...' : ''} ({u.email})
                   </option>
                 ))}
               </select>

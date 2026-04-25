@@ -18,8 +18,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 interface DashboardStats {
   totalSearches: number;
-  listedCount: number;
-  notListedCount: number;
+  totalAuditorSearches: number;
   recentSearches: Array<{
     id: string;
     keyword: string;
@@ -32,8 +31,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats>({
     totalSearches: 0,
-    listedCount: 0,
-    notListedCount: 0,
+    totalAuditorSearches: 0,
     recentSearches: [],
   });
   const [loading, setLoading] = useState(true);
@@ -49,15 +47,27 @@ export default function DashboardPage() {
         if (!user) { setLoading(false); return; }
 
         // Fetch searches
-        const { data: searches, count } = await supabase
+        const { count: searchCount } = await supabase
           .from('searches')
-          .select('id, keyword, created_at', { count: 'exact' })
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        const { data: recentSearches } = await supabase
+          .from('searches')
+          .select('id, keyword, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10);
 
-        // Fetch rank checks
-        const searchIds = (searches || []).map(s => s.id);
+        // Fetch auditor searches from api_logs
+        const { count: auditorCount } = await supabase
+          .from('api_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('endpoint', 'gemini/domain-audit');
+
+        // Fetch rank checks for recent searches to display status
+        const searchIds = (recentSearches || []).map(s => s.id);
         const { data: rankChecks } = searchIds.length > 0
           ? await supabase
               .from('rank_checks')
@@ -65,19 +75,15 @@ export default function DashboardPage() {
               .in('search_id', searchIds)
           : { data: [] };
 
-        const listedCount = rankChecks?.filter(r => r.is_listed).length || 0;
-        const notListedCount = rankChecks?.filter(r => !r.is_listed).length || 0;
-
-        const recentSearches = (searches || []).map(s => ({
+        const mappedSearches = (recentSearches || []).map(s => ({
           ...s,
           rank_check: rankChecks?.find(r => r.search_id === s.id),
         }));
 
         setStats({
-          totalSearches: count || 0,
-          listedCount,
-          notListedCount,
-          recentSearches,
+          totalSearches: searchCount || 0,
+          totalAuditorSearches: auditorCount || 0,
+          recentSearches: mappedSearches,
         });
       } catch (err) {
         console.warn('Dashboard stats load error:', err);
@@ -97,58 +103,42 @@ export default function DashboardPage() {
       bg: 'bg-indigo-50',
     },
     {
-      label: 'Listed Results',
-      value: stats.listedCount,
-      icon: CheckCircle2,
+      label: 'Total Auditor Searches',
+      value: stats.totalAuditorSearches,
+      icon: TrendingUp,
       color: 'from-emerald-500 to-emerald-600',
       bg: 'bg-emerald-50',
-    },
-    {
-      label: 'Not Listed',
-      value: stats.notListedCount,
-      icon: XCircle,
-      color: 'from-red-500 to-red-600',
-      bg: 'bg-red-50',
-    },
-    {
-      label: 'Success Rate',
-      value: stats.totalSearches > 0
-        ? `${Math.round((stats.listedCount / Math.max(stats.listedCount + stats.notListedCount, 1)) * 100)}%`
-        : '—',
-      icon: BarChart3,
-      color: 'from-cyan-500 to-cyan-600',
-      bg: 'bg-cyan-50',
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome back, {loading ? '...' : (user?.full_name?.split(' ')[0] || 'User')}!</h1>
-          <p className="text-gray-500 mt-1.5 font-medium">Your SEO ranking overview at a glance.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Welcome back, {loading ? '...' : (user?.full_name?.split(' ')[0] || 'User')}!</h1>
+          <p className="text-sm text-gray-500 font-medium">Your SEO ranking overview at a glance.</p>
         </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-gray-400 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 text-xs font-medium text-gray-400 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
           <Calendar className="w-4 h-4" />
           {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         {statCards.map((card, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="group relative bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+            className="group relative bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
           >
-            <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 group-hover:opacity-10 transition-opacity bg-gradient-to-br ${card.color} rounded-full blur-2xl`} />
+            <div className={`absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 opacity-5 group-hover:opacity-10 transition-opacity bg-gradient-to-br ${card.color} rounded-full blur-2xl`} />
             
-            <div className="flex items-center justify-between mb-6">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br ${card.color} shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform duration-500`}>
-                <card.icon className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${card.color} shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform duration-500`}>
+                <card.icon className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col items-end">
                 <TrendingUp className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition-colors" />
@@ -158,11 +148,11 @@ export default function DashboardPage() {
             
             <div className="space-y-1">
               {loading ? (
-                <div className="shimmer h-9 w-24 mb-1" />
+                <div className="shimmer h-8 w-20 mb-1" />
               ) : (
-                <p className="text-3xl font-bold text-gray-900 font-[Poppins]">{card.value}</p>
+                <p className="text-2xl font-bold text-gray-900 font-[Poppins]">{card.value}</p>
               )}
-              <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{card.label}</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{card.label}</p>
             </div>
           </motion.div>
         ))}
@@ -175,7 +165,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="lg:col-span-2 relative overflow-hidden bg-[#1E1B4B] rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-indigo-900/10"
+          className="lg:col-span-2 relative overflow-hidden bg-[#1E1B4B] rounded-3xl p-6 md:p-8 shadow-2xl shadow-indigo-900/10"
         >
           {/* Decorative backgrounds */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -mr-48 -mt-48" />
@@ -187,10 +177,10 @@ export default function DashboardPage() {
                 <Sparkles className="w-3 h-3" />
                 New Feature
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight font-[Poppins]">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight font-[Poppins]">
                 Rank check your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-cyan-300">competitors</span> instantly.
               </h2>
-              <p className="text-indigo-200/80 text-lg mb-8 leading-relaxed">
+              <p className="text-indigo-200/80 text-base mb-6 leading-relaxed">
                 Stay ahead of the curve. Analyze any keyword and see where your website stands in the current search landscape with Gemini Flash AI-powered results.
               </p>
             </div>
@@ -198,14 +188,17 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Link
                 href="/search"
-                className="group w-full sm:w-auto flex items-center justify-center gap-3 bg-white hover:bg-indigo-50 text-indigo-900 font-bold px-8 py-4 rounded-2xl transition-all active:scale-95 shadow-lg shadow-white/5"
+                className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-white hover:bg-indigo-50 text-indigo-900 font-bold px-6 py-3 text-sm rounded-xl transition-all active:scale-95 shadow-lg shadow-white/5"
               >
                 Start New Search 
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button className="w-full sm:w-auto px-8 py-4 text-white/70 hover:text-white font-semibold transition-colors">
+              <Link 
+                href="/how-it-works"
+                className="w-full sm:w-auto px-6 py-3 text-white/70 hover:text-white text-sm font-semibold transition-colors text-center"
+              >
                 Learn how it works
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -220,15 +213,15 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col overflow-hidden"
+          className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden max-h-[400px]"
         >
-          <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+          <div className="p-5 border-b border-gray-50 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 font-[Poppins]">Recent Activity</h2>
-              <p className="text-xs text-gray-400 font-medium mt-1">LATEST SEARCH HISTORY</p>
+              <h2 className="text-lg font-bold text-gray-900 font-[Poppins]">Recent Activity</h2>
+              <p className="text-[10px] text-gray-400 font-bold mt-0.5 uppercase tracking-wider">LATEST SEARCH HISTORY</p>
             </div>
-            <Link href="/history" className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400 hover:text-indigo-600">
-              <ArrowRight className="w-5 h-5" />
+            <Link href="/history" className="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-400 hover:text-indigo-600">
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           
@@ -260,7 +253,7 @@ export default function DashboardPage() {
               stats.recentSearches.map((search, idx) => (
                 <div 
                   key={search.id} 
-                  className={`group px-8 py-6 flex items-center gap-4 hover:bg-indigo-50/30 transition-all cursor-default ${
+                  className={`group px-6 py-4 flex items-center gap-3 hover:bg-indigo-50/30 transition-all cursor-default ${
                     idx !== stats.recentSearches.length - 1 ? 'border-b border-gray-50' : ''
                   }`}
                 >

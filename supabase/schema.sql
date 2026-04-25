@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS public.searches (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   keyword TEXT NOT NULL,
+  ai_overview JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Domain Audits table
+CREATE TABLE IF NOT EXISTS public.domain_audits (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  domain TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -82,6 +91,8 @@ CREATE TABLE IF NOT EXISTS public.user_sessions (
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_searches_user_id ON public.searches(user_id);
 CREATE INDEX IF NOT EXISTS idx_searches_created_at ON public.searches(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_domain_audits_user_id ON public.domain_audits(user_id);
+CREATE INDEX IF NOT EXISTS idx_domain_audits_created_at ON public.domain_audits(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_results_search_id ON public.search_results(search_id);
 CREATE INDEX IF NOT EXISTS idx_rank_checks_search_id ON public.rank_checks(search_id);
 CREATE INDEX IF NOT EXISTS idx_api_logs_user_id ON public.api_logs(user_id);
@@ -100,6 +111,7 @@ ALTER TABLE public.rank_checks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.api_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.domain_audits ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies (in case of re-run)
 DO $$
@@ -137,6 +149,14 @@ CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (true);
 -- =====================
 CREATE POLICY "searches_all_own" ON public.searches FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "searches_select_admin" ON public.searches FOR SELECT USING (
+  public.is_admin()
+);
+
+-- =====================
+-- Domain audits policies
+-- =====================
+CREATE POLICY "domain_audits_all_own" ON public.domain_audits FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "domain_audits_select_admin" ON public.domain_audits FOR SELECT USING (
   public.is_admin()
 );
 

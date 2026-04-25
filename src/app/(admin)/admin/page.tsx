@@ -16,7 +16,9 @@ interface Analytics {
   activeUsers: number;
   liveUsers: number;
   totalSearches: number;
+  totalAudits: number;
   weeklySearches: number;
+  weeklyAudits: number;
   totalTokens: number;
   dailySearches: Record<string, number>;
 }
@@ -84,12 +86,28 @@ export default function AdminDashboardPage() {
       textColor: 'text-violet-700',
     },
     {
+      label: 'Total Audits',
+      value: analytics?.totalAudits || 0,
+      icon: Activity,
+      color: 'from-emerald-500 to-emerald-600',
+      bg: 'bg-emerald-50',
+      textColor: 'text-emerald-700',
+    },
+    {
       label: 'Weekly Searches',
       value: analytics?.weeklySearches || 0,
       icon: TrendingUp,
       color: 'from-amber-500 to-amber-600',
       bg: 'bg-amber-50',
       textColor: 'text-amber-700',
+    },
+    {
+      label: 'Weekly Audits',
+      value: analytics?.weeklyAudits || 0,
+      icon: TrendingUp,
+      color: 'from-indigo-500 to-indigo-600',
+      bg: 'bg-indigo-50',
+      textColor: 'text-indigo-700',
     },
     {
       label: 'API Tokens Used',
@@ -108,24 +126,24 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-[Poppins]">Admin Dashboard</h1>
-        <p className="text-gray-500 mt-1">Platform analytics and user insights</p>
+      <div className="mb-6 text-center sm:text-left">
+        <h1 className="text-xl sm:text-2xl font-bold font-[Poppins]">Admin Dashboard</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Platform analytics and user insights</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {cards.map((card, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
-            className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-11 h-11 rounded-xl ${card.bg} flex items-center justify-center`}>
-                <card.icon className={`w-5 h-5 ${card.textColor}`} />
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-9 h-9 rounded-lg ${card.bg} flex items-center justify-center`}>
+                <card.icon className={`w-4 h-4 ${card.textColor}`} />
               </div>
               {card.isLive && (
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
@@ -135,11 +153,11 @@ export default function AdminDashboardPage() {
               )}
             </div>
             {loading ? (
-              <div className="shimmer h-9 w-24 mb-1" />
+              <div className="shimmer h-8 w-20 mb-0.5" />
             ) : (
-              <p className="text-3xl font-bold font-[Poppins]">{formatNumber(card.value)}</p>
+              <p className="text-2xl font-bold font-[Poppins]">{formatNumber(card.value)}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">{card.label}</p>
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">{card.label}</p>
           </motion.div>
         ))}
       </div>
@@ -149,9 +167,9 @@ export default function AdminDashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-white rounded-2xl border border-gray-100 p-6"
+        className="bg-white rounded-xl border border-gray-100 p-5"
       >
-        <h2 className="text-lg font-semibold font-[Poppins] mb-6">Search Trend (Last 7 Days)</h2>
+        <h2 className="text-base font-semibold font-[Poppins] mb-4">Search Trend (Last 7 Days)</h2>
         {loading ? (
           <div className="shimmer h-48 w-full" />
         ) : Object.keys(analytics?.dailySearches || {}).length === 0 ? (
@@ -159,17 +177,17 @@ export default function AdminDashboardPage() {
             No search data available for this period
           </div>
         ) : (
-          <div className="flex items-end gap-4 h-48">
+          <div className="flex items-end gap-3 h-32">
             {Object.entries(analytics?.dailySearches || {}).map(([day, count], i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-xs font-medium text-gray-700">{count}</span>
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-bold text-gray-700">{count}</span>
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${(count / maxDailySearch) * 100}%` }}
                   transition={{ delay: i * 0.1 + 0.5, duration: 0.5 }}
-                  className="w-full bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-lg min-h-[4px]"
+                  className="w-full bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-md min-h-[4px]"
                 />
-                <span className="text-xs text-gray-500">{day}</span>
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-medium whitespace-nowrap">{day}</span>
               </div>
             ))}
           </div>

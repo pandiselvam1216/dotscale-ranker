@@ -82,43 +82,43 @@ export default function SearchPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-12">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight font-[Poppins]">
+      <div className="flex flex-col gap-1 sm:gap-2 px-4 sm:px-0">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight font-[Poppins] leading-tight">
           Search <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Simulator</span>
         </h1>
-        <p className="text-gray-500 text-lg font-medium">Analyze real-time search engine results powered by Gemini Flash AI.</p>
+        <p className="text-sm sm:text-lg text-gray-500 font-medium">Analyze real-time search results powered by Gemini AI.</p>
       </div>
 
       {/* Search Input Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-2 rounded-[2rem] shadow-xl shadow-indigo-100/50 border border-indigo-50/50 flex flex-col md:flex-row gap-2 transition-all focus-within:shadow-indigo-200/50 focus-within:border-indigo-100"
+        className="mx-4 sm:mx-0 bg-white p-1 rounded-2xl shadow-xl shadow-indigo-500/5 border border-indigo-100 flex flex-col sm:flex-row gap-2 transition-all"
       >
         <div className="flex-1 relative group">
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-gray-50 group-focus-within:bg-indigo-50 transition-colors">
-            <SearchIcon className="w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-gray-50 group-focus-within:bg-indigo-50 transition-colors">
+            <SearchIcon className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
           </div>
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-            placeholder="Enter search keyword (e.g., 'best marketing agency')"
-            className="w-full bg-transparent py-6 pl-20 pr-6 text-lg font-medium text-gray-900 placeholder:text-gray-300 focus:outline-none"
+            placeholder="Search keyword (e.g. 'nike sneakers')"
+            className="w-full bg-transparent py-3.5 pl-12 pr-4 text-base font-bold text-gray-900 placeholder:text-gray-300 focus:outline-none"
           />
         </div>
         <button
           onClick={handleSearch}
           disabled={isSearching || !keyword.trim()}
-          className="md:w-48 bg-gray-900 hover:bg-black text-white rounded-[1.5rem] py-4 md:py-0 px-8 font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:bg-gray-200 disabled:cursor-not-allowed group shadow-lg shadow-gray-200"
+          className="sm:w-36 bg-gray-900 hover:bg-black text-white rounded-xl py-3.5 sm:py-0 px-6 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-100 disabled:text-gray-400 group flex-shrink-0"
         >
           {isSearching ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
               Check
-              <SearchIcon className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <SearchIcon className="w-4 h-4 opacity-50 text-indigo-400" />
             </>
           )}
         </button>
@@ -157,7 +157,7 @@ export default function SearchPage() {
               ))}
             </div>
           ) : results.length > 0 ? (
-            <div className="space-y-12 pb-20">
+            <div className="space-y-8 pb-12">
               {/* AI Overview stays at the top */}
               {aiOverview && (
                 <AIAttributionAudit 
@@ -167,17 +167,17 @@ export default function SearchPage() {
                 />
               )}
 
-              <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-50 rounded-xl">
-                      <Sparkles className="w-5 h-5 text-indigo-600" />
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-2 sm:px-0">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-indigo-50 rounded-lg">
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 font-[Poppins]">
+                    <h2 className="text-xl font-bold text-gray-900 font-[Poppins]">
                       Search <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Findings</span>
                     </h2>
                   </div>
-                  <div className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-500 uppercase tracking-widest border border-gray-200">
+                  <div className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-400 uppercase tracking-widest border border-gray-200">
                     {results.length} Results
                   </div>
                 </div>
@@ -191,10 +191,10 @@ export default function SearchPage() {
                       transition={{ delay: i * 0.05 }}
                       onMouseEnter={() => setActiveSourcePosition(result.position)}
                       onMouseLeave={() => setActiveSourcePosition(null)}
-                      className={`group bg-white rounded-3xl border p-6 transition-all duration-300 relative ${
+                      className={`group bg-white rounded-2xl border p-4 sm:p-5 transition-all duration-300 relative ${
                         activeSourcePosition === result.position
-                          ? 'border-indigo-600 shadow-xl shadow-indigo-500/10 ring-4 ring-indigo-50 scale-[1.02] z-20'
-                          : 'border-gray-100 hover:shadow-xl hover:shadow-indigo-500/5 hover:border-indigo-100'
+                          ? 'border-indigo-600 shadow-xl shadow-indigo-500/10 scale-[1.01] z-20'
+                          : 'border-gray-100 hover:shadow-lg hover:shadow-indigo-500/5 hover:border-indigo-100'
                       }`}
                     >
                       {activeSourcePosition === result.position && (

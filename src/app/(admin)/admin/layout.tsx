@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/auth-store';
+import NetworkStatus from '@/components/NetworkStatus';
 
 const adminNavItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'Analytics' },
@@ -32,17 +33,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, setUser } = useAuthStore();
 
   const loadUser = useCallback(async () => {
-    const supabase = createClient();
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-      if (profile) {
-        setUser({ id: profile.id, email: profile.email, full_name: profile.full_name, role: profile.role });
+    try {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (error) throw error;
+
+        if (profile) {
+          setUser({ id: profile.id, email: profile.email, full_name: profile.full_name, role: profile.role });
+        }
       }
+    } catch (err) {
+      console.error('Error loading admin user data:', err);
     }
   }, [setUser]);
 
@@ -172,27 +180,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </Link>
                 ))}
               </nav>
+
+              <div className="p-4 border-t border-gray-100">
+                <div className="flex items-center gap-3 px-3 py-2">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white text-sm font-bold">
+                    {user?.full_name?.charAt(0) || 'A'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{user?.full_name || 'Admin'}</p>
+                    <p className="text-xs text-gray-500">Administrator</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 mt-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center px-6">
+      <div className="flex-1 lg:ml-64 max-w-full overflow-x-hidden min-h-screen flex flex-col">
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center px-4 sm:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg -ml-1"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <div className="flex items-center gap-2 ml-4 lg:ml-0">
-            <TrendingUp className="w-5 h-5 text-amber-600" />
-            <span className="text-sm font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-full">Admin Mode</span>
+          <div className="flex items-center gap-1.5 ml-1 lg:ml-0 overflow-hidden">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 flex-shrink-0" />
+            <span className="text-[9px] sm:text-sm font-semibold text-amber-700 bg-amber-50 px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full whitespace-nowrap">Admin Mode</span>
+          </div>
+          <div className="flex-1" />
+          <div className="hidden sm:block">
+            <NetworkStatus />
           </div>
         </header>
 
-        <main className="p-6 lg:p-8">
+        <main className="p-3 sm:p-6 lg:p-8">
           <motion.div
             key={pathname}
             initial={{ opacity: 0, y: 10 }}

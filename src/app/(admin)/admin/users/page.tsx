@@ -25,6 +25,7 @@ interface UserProfile {
   created_at: string;
   last_seen_at: string;
   search_count: number;
+  audit_count: number;
   total_tokens: number;
   is_online: boolean;
   last_active: string;
@@ -41,7 +42,11 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   
   const [viewActivityUser, setViewActivityUser] = useState<UserProfile | null>(null);
-  const [userActivity, setUserActivity] = useState<{ searches: any[]; apiLogs: any[] }>({ searches: [], apiLogs: [] });
+  const [userActivity, setUserActivity] = useState<{ searches: any[]; audits: any[]; apiLogs: any[] }>({ 
+    searches: [], 
+    audits: [], 
+    apiLogs: [] 
+  });
   const [loadingActivity, setLoadingActivity] = useState(false);
 
   const fetchUsers = async () => {
@@ -136,170 +141,290 @@ export default function AdminUsersPage() {
   return (
     <div>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-[Poppins]">User Management</h1>
-          <p className="text-gray-500 mt-1">
-            {users.length} total users ·{' '}
-            <span className="text-emerald-600 font-medium">
-              {liveCount} live now
+        <div className="min-w-0 pr-2">
+          <h1 className="text-xl sm:text-2xl font-bold font-[Poppins] leading-tight">User Management</h1>
+          <p className="text-[11px] sm:text-sm text-gray-500 mt-1">
+            {users.length} registered ·{' '}
+            <span className="text-emerald-600 font-semibold inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-live" />
+              {liveCount} active now
             </span>
           </p>
         </div>
-        <div className="relative">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search users..."
-            className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-sm w-64"
+            className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-sm w-full"
           />
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      {/* Mobile Card View (Hidden on Desktop) */}
+      <div className="lg:hidden space-y-4">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="shimmer w-10 h-10 rounded-full" />
+                <div className="space-y-2">
+                  <div className="shimmer h-4 w-32" />
+                  <div className="shimmer h-3 w-24" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="shimmer h-12 rounded-xl" />
+                <div className="shimmer h-12 rounded-xl" />
+              </div>
+            </div>
+          ))
+        ) : filteredUsers.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center text-gray-500 border border-gray-100">
+            <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p>No users found</p>
+          </div>
+        ) : (
+          filteredUsers.map((u, i) => (
+            <motion.div
+              key={u.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+            >
+              <div className="p-4">
+                {/* Header Information */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-sm font-bold">
+                        {u.full_name?.charAt(0) || u.email.charAt(0).toUpperCase()}
+                      </div>
+                      {u.is_online && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full pulse-live" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-900 text-sm truncate">{u.full_name || 'Unnamed User'}</h3>
+                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {u.is_online ? (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Online</span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">Offline</span>
+                    )}
+                    {u.role === 'admin' && (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Admin</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stats Grid - RESTORED HIDDEN OPTIONS */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight mb-0.5">Performance</p>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-bold text-indigo-600">{u.search_count} <span className="text-[9px] font-medium text-gray-400">Searches</span></span>
+                       <span className="text-xs font-bold text-emerald-600">{u.audit_count} <span className="text-[9px] font-medium text-gray-400">Audits</span></span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight mb-0.5">Last Active</p>
+                    <p className="text-xs font-semibold text-gray-700">{formatTimeAgo(u.last_active)}</p>
+                  </div>
+                  <div className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight mb-0.5">API Exposure</p>
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-amber-500" />
+                      <span className="text-xs font-bold text-gray-800">{u.total_tokens.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight mb-0.5">Session Time</p>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-xs font-bold text-gray-800">{formatDuration(u.total_session_seconds)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions Row */}
+                <div className="flex items-center gap-2 pt-3 border-t border-dashed border-gray-100">
+                  <button 
+                    onClick={() => handleViewActivity(u)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors"
+                  >
+                    <Search className="w-3.5 h-3.5" /> Activity
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setEditUser(u);
+                      setEditName(u.full_name);
+                      setEditRole(u.role);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button 
+                    onClick={() => handleBlock(u.id, !u.is_blocked)}
+                    className={`flex-none p-2 rounded-xl transition-colors ${
+                      u.is_blocked ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                    }`}
+                  >
+                    {u.is_blocked ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (Hidden on Mobile) */}
+      <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">User</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Status</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Searches</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">API Usage</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Time Spent</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Last Active</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-4">Actions</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">User</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Status</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Searches</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Audits</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">API Usage</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Time Spent</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Last Active</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-4">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 text-sm">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td className="px-6 py-4"><div className="shimmer h-10 w-48" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-20" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-12" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-16" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-16" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-20" /></td>
-                    <td className="px-6 py-4"><div className="shimmer h-6 w-28" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-10 w-48" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-20" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-12" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-16" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-16" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-20" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-6 w-28" /></td>
+                    <td className="px-4 py-4"><div className="shimmer h-10 w-24" /></td>
                   </tr>
                 ))
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    <Users className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                    No users found
+              ) : filteredUsers.map((u, i) => (
+                <motion.tr
+                  key={u.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="hover:bg-gray-50/30 transition-colors"
+                >
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                          {u.full_name?.charAt(0) || u.email.charAt(0).toUpperCase()}
+                        </div>
+                        {u.is_online && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full pulse-live" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{u.full_name || 'Unnamed'}</p>
+                        <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      </div>
+                    </div>
                   </td>
-                </tr>
-              ) : (
-                filteredUsers.map((u, i) => (
-                  <motion.tr
-                    key={u.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-cyan-400 flex items-center justify-center text-white text-sm font-bold">
-                            {u.full_name?.charAt(0) || u.email.charAt(0).toUpperCase()}
-                          </div>
-                          {u.is_online && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full pulse-live" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{u.full_name || 'Unnamed'}</p>
-                          <p className="text-xs text-gray-500">{u.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        {u.is_online ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full w-fit">
-                            <Wifi className="w-3 h-3" /> Online
-                          </span>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col gap-1.5">
+                      {u.is_online ? (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full w-fit">
+                          <Wifi className="w-3 h-3" /> Online
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-500 bg-gray-100/80 px-2.5 py-1 rounded-full w-fit">
+                          <WifiOff className="w-3 h-3" /> Offline
+                        </span>
+                      )}
+                      {u.role === 'admin' && (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full w-fit">
+                          Admin
+                        </span>
+                      )}
+                      {u.is_blocked && (
+                        <span className="text-[11px] font-bold text-red-700 bg-red-50 px-2.5 py-1 rounded-full w-fit">
+                          Blocked
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="font-bold text-indigo-600">{u.search_count}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="font-bold text-emerald-600">{u.audit_count}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center gap-1 font-semibold text-gray-700">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      {u.total_tokens.toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center gap-1 text-gray-700 font-medium">
+                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      {formatDuration(u.total_session_seconds)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="text-gray-500 font-medium whitespace-nowrap">
+                      {formatTimeAgo(u.last_active)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleViewActivity(u)}
+                        className="p-2 hover:bg-amber-100 text-amber-600 rounded-lg transition-all shadow-sm bg-amber-50/50"
+                        title="View Activity"
+                      >
+                        <Search className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditUser(u);
+                          setEditName(u.full_name);
+                          setEditRole(u.role);
+                        }}
+                        className="p-2 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-all shadow-sm bg-indigo-50/50"
+                        title="Edit"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleBlock(u.id, !u.is_blocked)}
+                        className={`p-2 rounded-lg transition-all shadow-sm ${
+                          u.is_blocked
+                            ? 'bg-emerald-50/50 hover:bg-emerald-100 text-emerald-600'
+                            : 'bg-red-50/50 hover:bg-red-100 text-red-600'
+                        }`}
+                        title={u.is_blocked ? 'Unblock' : 'Block'}
+                      >
+                        {u.is_blocked ? (
+                          <Shield className="w-4 h-4" />
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit">
-                            <WifiOff className="w-3 h-3" /> Offline
-                          </span>
+                          <ShieldOff className="w-4 h-4" />
                         )}
-                        {u.is_blocked && (
-                          <span className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full w-fit">
-                            Blocked
-                          </span>
-                        )}
-                        {u.role === 'admin' && (
-                          <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-full w-fit">
-                            Admin
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold">{u.search_count}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 text-sm">
-                        <Zap className="w-3 h-3 text-amber-500" />
-                        {u.total_tokens.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 text-sm text-gray-700">
-                        <Clock className="w-3 h-3 text-gray-400" />
-                        {formatDuration(u.total_session_seconds)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-500">
-                        {formatTimeAgo(u.last_active)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleViewActivity(u)}
-                          className="p-2 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="View Activity"
-                        >
-                          <Search className="w-4 h-4 text-amber-600" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditUser(u);
-                            setEditName(u.full_name);
-                            setEditRole(u.role);
-                          }}
-                          className="p-2 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit3 className="w-4 h-4 text-indigo-600" />
-                        </button>
-                        <button
-                          onClick={() => handleBlock(u.id, !u.is_blocked)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            u.is_blocked
-                              ? 'hover:bg-emerald-50'
-                              : 'hover:bg-red-50'
-                          }`}
-                          title={u.is_blocked ? 'Unblock' : 'Block'}
-                        >
-                          {u.is_blocked ? (
-                            <Shield className="w-4 h-4 text-emerald-600" />
-                          ) : (
-                            <ShieldOff className="w-4 h-4 text-red-600" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -423,10 +548,10 @@ export default function AdminUsersPage() {
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Recent Searches</h4>
                     {userActivity.searches.map((search) => (
-                      <div key={search.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
+                      <div key={search.id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between text-sm">
                         <div>
                           <p className="font-semibold text-gray-900">{search.keyword}</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-[10px] text-gray-400 mt-0.5">
                             {new Date(search.created_at).toLocaleString()}
                           </p>
                         </div>
@@ -435,6 +560,25 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                     ))}
+                    
+                    {userActivity.audits.length > 0 && (
+                      <>
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Recent Domain Audits</h4>
+                        {userActivity.audits.map((audit) => (
+                          <div key={audit.id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between text-sm">
+                            <div>
+                              <p className="font-semibold text-gray-900">{audit.domain}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                {new Date(audit.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-1 rounded-md">
+                              Audit
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                     
                     {userActivity.apiLogs.length > 0 && (
                       <div className="mt-8">

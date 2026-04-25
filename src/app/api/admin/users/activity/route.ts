@@ -32,7 +32,15 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    // Fetch user's rank checks combined
+    // Fetch user's domain audits
+    const { data: audits } = await supabase
+      .from('domain_audits')
+      .select('id, domain, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    // Fetch user's API logs
     const { data: apiLogs } = await supabase
       .from('api_logs')
       .select('endpoint, tokens_used, created_at')
@@ -40,7 +48,11 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    return NextResponse.json({ searches: searches || [], apiLogs: apiLogs || [] });
+    return NextResponse.json({ 
+      searches: searches || [], 
+      audits: audits || [],
+      apiLogs: apiLogs || [] 
+    });
   } catch (error) {
     console.error('Admin user activity error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

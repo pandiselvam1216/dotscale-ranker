@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Search,
@@ -11,7 +12,6 @@ import {
   Globe,
   ArrowRight,
   Check,
-  Star,
   ChevronRight,
 } from 'lucide-react';
 
@@ -30,6 +30,33 @@ const stagger = {
 };
 
 export default function LandingPage() {
+  const [displayText, setDisplayText] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const fullText = 'best cotton clothes';
+
+  useEffect(() => {
+    let index = 0;
+    let timer: NodeJS.Timeout;
+
+    const typeText = () => {
+      if (index <= fullText.length) {
+        setDisplayText(fullText.slice(0, index));
+        index++;
+        timer = setTimeout(typeText, 100);
+      } else {
+        // Wait a bit then show results
+        setTimeout(() => setShowResults(true), 600);
+      }
+    };
+
+    const initialDelay = setTimeout(typeText, 1000);
+
+    return () => {
+      clearTimeout(initialDelay);
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -44,7 +71,6 @@ export default function LandingPage() {
           <div className="hidden md:flex" style={{ alignItems: 'center', gap: '32px' }}>
             <a href="#features" style={{ fontSize: '0.875rem', color: '#6b7280', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#111827')} onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}>Features</a>
             <a href="#demo" style={{ fontSize: '0.875rem', color: '#6b7280', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#111827')} onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}>Demo</a>
-            <a href="#pricing" style={{ fontSize: '0.875rem', color: '#6b7280', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#111827')} onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}>Pricing</a>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Link
@@ -200,154 +226,66 @@ export default function LandingPage() {
             {/* Mock SERP */}
             <div style={{ padding: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                <div style={{ flex: 1, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: '12px', padding: '14px 20px', color: '#374151', fontWeight: 500, fontSize: '0.9375rem' }}>
-                  &quot;best cotton clothes&quot;
+                <div style={{ flex: 1, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: '12px', padding: '14px 20px', color: '#374151', fontWeight: 500, fontSize: '0.9375rem', position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <span>&quot;{displayText}&quot;</span>
+                  {!showResults && (
+                    <motion.div
+                      animate={{ opacity: [1, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                      style={{ width: '2px', height: '18px', background: '#6366f1', marginLeft: '2px' }}
+                    />
+                  )}
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', padding: '14px 24px', borderRadius: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9375rem' }}>
+                <motion.div 
+                  animate={showResults ? { scale: [1, 0.95, 1], backgroundColor: ['#6366f1', '#4338ca', '#6366f1'] } : {}}
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', padding: '14px 24px', borderRadius: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9375rem', cursor: 'pointer' }}
+                >
                   <Search style={{ width: '16px', height: '16px' }} /> Search
-                </div>
+                </motion.div>
               </div>
 
               {/* Mock Results */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {[
-                  { pos: 1, title: 'Premium Cotton Clothing — Best Quality Collection', url: 'https://www.cottonworld.com/collections/best-cotton', snippet: 'Discover our finest cotton clothing collection. 100% organic cotton, sustainably sourced.' },
-                  { pos: 2, title: '15 Best Cotton Clothes Brands in 2025 — StyleGuide', url: 'https://www.styleguide.com/best-cotton-brands', snippet: 'Our experts reviewed and ranked the top 15 cotton clothing brands for every wardrobe.' },
-                  { pos: 3, title: 'Best Cotton Fabric Clothes for Summer — Amazon', url: 'https://www.amazon.com/best-cotton-clothes', snippet: 'Shop the best cotton clothes on Amazon. Free shipping on eligible orders.' },
-                ].map((result) => (
-                  <div key={result.pos} className="serp-result" style={{ cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '0.75rem', color: '#9ca3af', background: '#f3f4f6', padding: '2px 10px', borderRadius: '100px', fontWeight: 600 }}>#{result.pos}</span>
-                      <span style={{ fontSize: '0.75rem', color: '#15803d' }}>{result.url}</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.0625rem', color: '#4338ca', fontWeight: 500, marginBottom: '4px' }}>
-                      {result.title}
-                    </h3>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', lineHeight: 1.6 }}>{result.snippet}</p>
-                  </div>
-                ))}
-                <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem', padding: '12px 0' }}>
-                  ... and 17 more results
-                </div>
-              </div>
-
-              {/* Mock Rank Check */}
-              <div style={{ marginTop: '24px', padding: '24px', background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '6px' }}>Target URL: www.cottonworld.com</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#15803d', fontFamily: 'Poppins, sans-serif' }}>✅ LISTED — Position #1</p>
-                  </div>
-                  <div style={{ background: '#10b981', color: 'white', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '0.875rem' }}>
-                    RANKED
-                  </div>
-                </div>
+                <AnimatePresence>
+                  {showResults && (
+                    <>
+                      {[
+                        { pos: 1, title: 'Premium Cotton Clothing — Best Quality Collection', url: 'https://www.cottonworld.com/collections/best-cotton', snippet: 'Discover our finest cotton clothing collection. 100% organic cotton, sustainably sourced.' },
+                        { pos: 2, title: '15 Best Cotton Clothes Brands in 2025 — StyleGuide', url: 'https://www.styleguide.com/best-cotton-brands', snippet: 'Our experts reviewed and ranked the top 15 cotton clothing brands for every wardrobe.' },
+                        { pos: 3, title: 'Best Cotton Fabric Clothes for Summer — Amazon', url: 'https://www.amazon.com/best-cotton-clothes', snippet: 'Shop the best cotton clothes on Amazon. Free shipping on eligible orders.' },
+                      ].map((result, i) => (
+                        <motion.div
+                          key={result.pos}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.2 }}
+                          className="serp-result"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#9ca3af', background: '#f3f4f6', padding: '2px 10px', borderRadius: '100px', fontWeight: 600 }}>#{result.pos}</span>
+                            <span style={{ fontSize: '0.75rem', color: '#15803d' }}>{result.url}</span>
+                          </div>
+                          <h3 style={{ fontSize: '1.0625rem', color: '#4338ca', fontWeight: 500, marginBottom: '4px' }}>
+                            {result.title}
+                          </h3>
+                          <p style={{ fontSize: '0.875rem', color: '#6b7280', lineHeight: 1.6 }}>{result.snippet}</p>
+                        </motion.div>
+                      ))}
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem', padding: '12px 0' }}
+                      >
+                        ... and 17 more results
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" style={{ padding: '96px 0', background: '#ffffff' }} className="px-4 sm:px-6 lg:px-8">
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: 'center', marginBottom: '64px' }}
-          >
-            <span style={{ color: '#6366f1', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Pricing</span>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, fontFamily: 'Poppins, sans-serif', marginTop: '12px', marginBottom: '16px', color: '#111827' }}>
-              Simple, Transparent Pricing
-            </h2>
-            <p style={{ color: '#6b7280', fontSize: '1.0625rem' }}>Choose the plan that fits your needs. Scale as you grow.</p>
-          </motion.div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', maxWidth: '960px', margin: '0 auto', alignItems: 'start' }}>
-            {[
-              {
-                name: 'Starter',
-                price: '$19',
-                period: '/month',
-                desc: 'Perfect for individual SEO professionals',
-                features: ['100 searches/month', 'Top 20 SERP results', 'Basic rank checking', 'Search history', 'Email support'],
-                highlighted: false,
-              },
-              {
-                name: 'Professional',
-                price: '$49',
-                period: '/month',
-                desc: 'For growing teams and agencies',
-                features: ['500 searches/month', 'Advanced fuzzy matching', 'Priority API access', 'Team dashboard', 'Ranking gap analysis', 'Priority support'],
-                highlighted: true,
-              },
-              {
-                name: 'Enterprise',
-                price: '$149',
-                period: '/month',
-                desc: 'For large agencies and enterprises',
-                features: ['Unlimited searches', 'Custom AI models', 'API access', 'Dedicated support', 'White-label option', 'SLA guarantee'],
-                highlighted: false,
-              },
-            ].map((plan, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                style={{
-                  position: 'relative',
-                  padding: '32px',
-                  borderRadius: '20px',
-                  border: plan.highlighted ? '2px solid #c7d2fe' : '1.5px solid #e5e7eb',
-                  background: plan.highlighted ? 'linear-gradient(180deg, rgba(238,242,255,0.5), white)' : 'white',
-                  boxShadow: plan.highlighted ? '0 20px 40px -12px rgba(99,102,241,0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
-                  transform: plan.highlighted ? 'scale(1.05)' : 'none',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {plan.highlighted && (
-                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', fontSize: '0.75rem', fontWeight: 700, padding: '4px 16px', borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                    <Star style={{ width: '12px', height: '12px' }} /> Most Popular
-                  </div>
-                )}
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Poppins, sans-serif', color: '#111827' }}>{plan.name}</h3>
-                <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '4px', marginBottom: '24px' }}>{plan.desc}</p>
-                <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'Poppins, sans-serif', color: '#111827' }}>{plan.price}</span>
-                  <span style={{ color: '#9ca3af' }}>{plan.period}</span>
-                </div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                  {plan.features.map((f, j) => (
-                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.875rem', color: '#374151' }}>
-                      <Check style={{ width: '16px', height: '16px', color: '#6366f1', flexShrink: 0 }} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/signup"
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    padding: '14px',
-                    borderRadius: '12px',
-                    fontWeight: 600,
-                    fontSize: '0.9375rem',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s',
-                    background: plan.highlighted ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : '#f3f4f6',
-                    color: plan.highlighted ? 'white' : '#374151',
-                    boxShadow: plan.highlighted ? '0 2px 8px -2px rgba(99,102,241,0.4)' : 'none',
-                  }}
-                >
-                  Get Started
-                </Link>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 

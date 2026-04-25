@@ -41,6 +41,11 @@ export async function GET() {
       .from('searches')
       .select('*', { count: 'exact', head: true });
 
+    // Total domain audits
+    const { count: totalAudits } = await supabase
+      .from('domain_audits')
+      .select('*', { count: 'exact', head: true });
+
     // Total API tokens
     const { data: apiLogs } = await supabase
       .from('api_logs')
@@ -51,6 +56,12 @@ export async function GET() {
     // Searches this week
     const { count: weeklySearches } = await supabase
       .from('searches')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+    // Audits this week
+    const { count: weeklyAudits } = await supabase
+      .from('domain_audits')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -72,7 +83,9 @@ export async function GET() {
       activeUsers: activeUsers || 0,
       liveUsers: liveUsers || 0,
       totalSearches: totalSearches || 0,
+      totalAudits: totalAudits || 0,
       weeklySearches: weeklySearches || 0,
+      weeklyAudits: weeklyAudits || 0,
       totalTokens,
       dailySearches,
     });

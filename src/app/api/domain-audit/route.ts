@@ -26,6 +26,22 @@ export async function POST(request: NextRequest) {
 
     const auditData = await performDeepDomainAudit(sanitizedDomain);
 
+    // Filter out potential errors before logging
+    if (auditData) {
+      // Log for billing/telemetry
+      await supabase.from('api_logs').insert({
+        user_id: user.id,
+        endpoint: 'gemini/domain-audit',
+        tokens_used: 1500, // Estimation for auditor audit
+      });
+
+      // Log for history/admin view
+      await supabase.from('domain_audits').insert({
+        user_id: user.id,
+        domain: sanitizedDomain,
+      });
+    }
+
     return NextResponse.json(auditData);
   } catch (error: any) {
     console.error('Domain audit error:', error);

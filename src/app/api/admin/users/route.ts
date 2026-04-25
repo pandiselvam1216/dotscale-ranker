@@ -33,6 +33,11 @@ export async function GET() {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
+        const { count: auditCount } = await supabase
+          .from('domain_audits')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
         const { data: apiLogs } = await supabase
           .from('api_logs')
           .select('tokens_used')
@@ -61,6 +66,7 @@ export async function GET() {
         return {
           ...user,
           search_count: searchCount || 0,
+          audit_count: auditCount || 0,
           total_tokens: totalTokens,
           is_online: isOnline || lastSeenRecent,
           last_active: user.last_seen_at,

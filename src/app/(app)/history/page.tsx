@@ -34,16 +34,20 @@ export default function HistoryPage() {
 
   useEffect(() => {
     async function loadHistory() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        // Small delay to avoid auth token lock race with layout component
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
 
-      const { data: searchData } = await supabase
-        .from('searches')
-        .select('id, keyword, created_at, ai_overview')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        const { data: searchData } = await supabase
+          .from('searches')
+          .select('id, keyword, created_at, ai_overview')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
       if (!searchData) {
         setLoading(false);
@@ -73,18 +77,22 @@ export default function HistoryPage() {
       }
 
       setSearches(fullHistory);
+    } catch (err) {
+      console.warn('History load error:', err);
+    } finally {
       setLoading(false);
     }
-    loadHistory();
-  }, []);
+  }
+  loadHistory();
+}, []);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight font-[Poppins]">
+      <div className="flex flex-col gap-1 sm:gap-2 px-2">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight font-[Poppins]">
           Search <span className="text-indigo-600">History</span>
         </h1>
-        <p className="text-gray-500 text-lg font-medium">Review and audit your past search simulations powered by Gemini Flash AI.</p>
+        <p className="text-sm sm:text-lg text-gray-500 font-medium">Review and audit your past simulations.</p>
       </div>
 
       {loading ? (
@@ -125,62 +133,58 @@ export default function HistoryPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`bg-white rounded-[2rem] border transition-all duration-300 overflow-hidden ${
-                expandedId === search.id ? 'border-indigo-200 shadow-xl shadow-indigo-500/5 ring-4 ring-indigo-50/50' : 'border-gray-100 hover:border-gray-200 shadow-sm'
+              className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+                expandedId === search.id ? 'border-indigo-200 shadow-xl shadow-indigo-500/5' : 'border-gray-100 hover:border-gray-200 shadow-sm'
               }`}
             >
               <button
                 onClick={() => setExpandedId(expandedId === search.id ? null : search.id)}
-                className="w-full flex flex-col md:flex-row md:items-center gap-4 p-6 text-left group"
+                className="w-full flex flex-row items-center gap-3 p-4 sm:p-6 text-left group"
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                <div className={`w-8 h-8 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   expandedId === search.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'
                 }`}>
-                  <Search className="w-6 h-6" />
+                  <Search className="w-4 h-4 sm:w-6 sm:h-6" />
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-lg font-bold text-gray-900 truncate tracking-tight">{search.keyword}</p>
-                  <p className="text-sm text-gray-400 flex items-center gap-2 mt-0.5 font-medium">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {new Date(search.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })} at {new Date(search.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  <p className="text-base sm:text-lg font-bold text-gray-900 truncate tracking-tight">{search.keyword}</p>
+                  <p className="text-[10px] sm:text-sm text-gray-400 flex items-center gap-2 mt-0.5 font-medium">
+                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    {new Date(search.created_at).toLocaleDateString()}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {search.rank_check ? (
-                    <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-sm font-bold shadow-sm ${
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold shadow-sm ${
                       search.rank_check.is_listed
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-50'
-                        : 'bg-rose-50 text-rose-700 border-rose-100 shadow-rose-50'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-rose-50 text-rose-700 border-rose-100'
                     }`}>
                       {search.rank_check.is_listed ? (
                         <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          Ranked #{search.rank_check.position}
+                          <CheckCircle2 className="w-3 h-3" />
+                          #{search.rank_check.position}
                         </>
                       ) : (
                         <>
-                          <XCircle className="w-4 h-4" />
+                          <XCircle className="w-3 h-3" />
                           Unlisted
                         </>
                       )}
                     </div>
                   ) : (
-                    <div className="px-3 py-1.5 bg-gray-50 rounded-xl text-xs font-bold text-gray-400 border border-gray-100">
-                      No Audit
+                    <div className="px-2 py-1 bg-gray-50 rounded-lg text-[10px] font-bold text-gray-400 border border-gray-100">
+                      None
                     </div>
                   )}
                   
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
                     {expandedId === search.id ? (
-                      <ChevronUp className="w-5 h-5" />
+                      <ChevronUp className="w-4 h-4" />
                     ) : (
-                      <ChevronDown className="w-5 h-5" />
+                      <ChevronDown className="w-4 h-4" />
                     )}
                   </div>
                 </div>

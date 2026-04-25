@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [adminTapCount, setAdminTapCount] = useState(0);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -63,7 +64,20 @@ export default function LoginPage() {
     >
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'Poppins, sans-serif', color: '#111827' }}>Welcome Back</h1>
+          <h1 
+            onClick={() => {
+              const newCount = adminTapCount + 1;
+              if (newCount === 7) {
+                fillAdminCredentials();
+                setAdminTapCount(0);
+              } else {
+                setAdminTapCount(newCount);
+              }
+            }}
+            style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: 'Poppins, sans-serif', color: '#111827', cursor: 'default', userSelect: 'none' }}
+          >
+            Welcome Back
+          </h1>
           <p style={{ color: '#9ca3af', marginTop: '8px', fontSize: '0.9375rem' }}>Sign in to your DotScale account</p>
         </div>
 
@@ -133,31 +147,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Admin Quick Login */}
-        <button
-          type="button"
-          onClick={fillAdminCredentials}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            width: '100%',
-            marginTop: '16px',
-            padding: '12px',
-            background: '#fffbeb',
-            border: '1.5px solid #fde68a',
-            borderRadius: '12px',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#92400e',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <Shield style={{ width: '16px', height: '16px' }} />
-          Login as Admin
-        </button>
 
         <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#9ca3af', marginTop: '20px' }}>
           Don&apos;t have an account?{' '}

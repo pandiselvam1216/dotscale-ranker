@@ -51,50 +51,50 @@ export default function AuditorPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20">
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Hero Input Section */}
-      <section className="text-center space-y-6 pt-10">
+      <section className="text-center space-y-3 pt-2">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-full text-indigo-700 text-sm font-bold tracking-widest uppercase border border-indigo-100"
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 rounded-full text-indigo-700 text-[10px] sm:text-xs font-bold tracking-widest uppercase border border-indigo-100"
         >
-          <Target className="w-4 h-4" />
+          <Target className="w-3.5 h-3.5" />
           AI Intelligence Auditor
         </motion.div>
         
-        <h1 className="text-4xl md:text-5xl font-black text-gray-900 font-[Poppins] tracking-tight">
+        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 font-[Poppins] tracking-tight px-4 leading-tight">
           Audit your brand in the <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">AI Memory</span>
         </h1>
         
-        <p className="text-gray-500 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-          See exactly which pages and products Gemini recognizes from your domain and understand what search intents drive your visibility.
+        <p className="text-gray-500 text-sm sm:text-base max-w-xl mx-auto font-medium leading-relaxed px-6">
+          Identify exactly how Gemini perceives your domain and what intents drive your presence.
         </p>
 
-        <form onSubmit={handleAudit} className="max-w-2xl mx-auto relative group mt-8">
-          <div className="absolute inset-0 bg-indigo-600/5 blur-3xl rounded-full group-hover:bg-indigo-600/10 transition-colors duration-500" />
-          <div className="relative flex flex-col sm:flex-row gap-3">
+        <form onSubmit={handleAudit} className="max-w-xl mx-auto relative group mt-2 sm:mt-6 px-4 overflow-visible">
+          <div className="absolute -inset-4 bg-indigo-600/5 blur-3xl rounded-full group-hover:bg-indigo-600/10 transition-colors duration-500 pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row gap-2 p-1 rounded-xl bg-white border border-gray-200 shadow-xl shadow-indigo-500/5 transition-all focus-within:border-indigo-400">
             <div className="flex-1 relative">
-              <Globe className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Enter your website URL (e.g., nike.com)"
-                className="w-full h-16 pl-14 pr-6 bg-white border-2 border-gray-100 rounded-3xl text-gray-900 font-bold focus:outline-none focus:border-indigo-600 focus:ring-4 ring-indigo-50 transition-all text-lg shadow-xl shadow-gray-200/50"
+                placeholder="Enter domain (e.g. nike.com)"
+                className="w-full h-10 pl-11 pr-4 bg-transparent border-none text-gray-900 font-bold focus:outline-none transition-all text-[13px] placeholder:text-gray-400"
               />
             </div>
             <button
               type="submit"
               disabled={loading || !url.trim()}
-              className="h-16 px-10 bg-gray-900 hover:bg-black text-white rounded-3xl font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="h-10 px-6 bg-gray-900 hover:bg-black text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-100 disabled:text-gray-400 group flex-shrink-0"
             >
               {loading ? (
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
                   Audit Domain
-                  <Zap className="w-5 h-5 text-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <Zap className="w-3.5 h-3.5 text-indigo-400" />
                 </>
               )}
             </button>
@@ -121,169 +121,135 @@ export default function AuditorPage() {
         )}
 
         {data && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-10"
-          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
             {/* Verdict & Score Dashboard */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="bg-white rounded-[2.5rem] p-10 border-2 border-gray-50 shadow-xl shadow-gray-200/40 lg:col-span-2 relative overflow-hidden group">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-indigo-100 shadow-xl shadow-indigo-500/5 lg:col-span-2 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-indigo-100/50 transition-colors duration-500" />
-                <div className="relative z-10 space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-100">
-                      <ShieldCheck className="w-6 h-6 text-white" />
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100">
+                      <ShieldCheck className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-gray-900 tracking-tight font-[Poppins]">AI Visibility Verdict</h2>
-                      <p className="text-sm font-bold text-indigo-600 uppercase tracking-widest">Master Audit Report</p>
+                      <h2 className="text-xl font-black text-gray-900 tracking-tight font-[Poppins]">Audit Verdict</h2>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Master Report</p>
+                        {data.recoveryUsed && (
+                          <span className="flex items-center gap-1 text-[8px] font-black bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-100 uppercase tracking-tighter">
+                            <Zap className="w-2 h-2" />
+                            Smart Recovery
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xl text-gray-700 font-medium leading-relaxed italic">
+                  <p className="text-base sm:text-lg text-gray-700 font-medium leading-relaxed italic">
                     &ldquo;{data.verdict}&rdquo;
                   </p>
                 </div>
               </div>
 
-              <div className="bg-[#1E1B4B] rounded-[2.5rem] p-10 text-white shadow-2xl shadow-indigo-900/10 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="bg-[#1E1B4B] rounded-2xl p-6 sm:p-8 text-white shadow-2xl shadow-indigo-900/10 flex flex-col items-center justify-center text-center space-y-2">
                 <div className="relative">
-                  <svg className="w-32 h-32 transform -rotate-90">
+                  <svg className="w-20 h-20 transform -rotate-90">
                     <circle
-                      cx="64"
-                      cy="64"
-                      r="58"
+                      cx="40"
+                      cy="40"
+                      r="36"
                       stroke="currentColor"
-                      strokeWidth="10"
+                      strokeWidth="6"
                       fill="transparent"
                       className="text-white/5"
                     />
                     <motion.circle
-                      cx="64"
-                      cy="64"
-                      r="58"
+                      cx="40"
+                      cy="40"
+                      r="36"
                       stroke="currentColor"
-                      strokeWidth="10"
+                      strokeWidth="6"
                       fill="transparent"
-                      strokeDasharray="364.4"
-                      initial={{ strokeDashoffset: 364.4 }}
-                      animate={{ strokeDashoffset: 364.4 - (364.4 * data.visibilityScore) / 100 }}
+                      strokeDasharray="226.2"
+                      initial={{ strokeDashoffset: 226.2 }}
+                      animate={{ strokeDashoffset: 226.2 - (226.2 * data.visibilityScore) / 100 }}
                       className="text-indigo-400"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-4xl font-black">{data.visibilityScore}</span>
+                    <span className="text-2xl font-black">{data.visibilityScore}</span>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-black uppercase tracking-widest leading-none">Visibility</h3>
-                  <p className="text-indigo-200/60 font-bold text-sm mt-2 uppercase tracking-widest">Aggregate Brand Impact</p>
+                  <h3 className="text-xs font-black uppercase tracking-widest leading-none">Visibility</h3>
+                  <p className="text-indigo-200/40 font-bold text-[9px] mt-1 uppercase tracking-widest">Brand Impact</p>
                 </div>
               </div>
             </div>
 
-            {/* Knowledge vs Intent Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Top Identified Assets */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-50 rounded-xl">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 font-[Poppins]">Identified Assets</h3>
+            {/* Identified Assets Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-50 rounded-lg">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
                 </div>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  {data.pages.map((page, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="group bg-white rounded-3xl p-6 border-2 border-gray-50 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all flex items-center justify-between gap-4"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded">
-                            {page.type}
-                          </span>
-                          <span className="text-xs font-bold text-gray-400">#{(i+1).toString().padStart(2, '0')}</span>
-                        </div>
-                        <h4 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
-                          {page.title}
-                        </h4>
-                        <div className="flex items-center gap-3 mt-2">
-                           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                             <div 
-                               className="h-full bg-emerald-400" 
-                               style={{ width: `${page.relevanceScore}%` }} 
-                             />
-                           </div>
-                           <span className="text-[10px] font-black text-emerald-600 uppercase">{page.relevanceScore}% Impact</span>
-                        </div>
-                      </div>
-                      <a
-                        href={page.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-90"
-                      >
-                        <ExternalLink className="w-5 h-5" />
-                      </a>
-                    </motion.div>
-                  ))}
-                </div>
+                <h3 className="text-lg font-black text-gray-900 font-[Poppins]">Identified Brand Assets</h3>
               </div>
-
-              {/* User Search Intents */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-50 rounded-xl">
-                    <UserSearch className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 font-[Poppins]">Search Driver Mapping</h3>
-                </div>
-
-                <div className="space-y-4">
-                  {data.intents.map((intent, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="bg-gray-50/50 rounded-3xl p-8 border border-white relative overflow-hidden group"
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.pages.map((page, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="group bg-white rounded-2xl p-4 border border-gray-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all flex items-center justify-between gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 px-1.5 py-0.5 bg-indigo-50 rounded">
+                          {page.type}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                        {page.title}
+                      </h4>
+                      <div className="flex items-center gap-3 mt-2.5">
+                         <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: `${page.relevanceScore}%` }}
+                             transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
+                             className="h-full bg-emerald-400" 
+                           />
+                         </div>
+                         <span className="text-[8px] font-black text-emerald-600 uppercase whitespace-nowrap">{page.relevanceScore}% Impact</span>
+                      </div>
+                    </div>
+                    <a
+                      href={page.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-90"
                     >
-                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                         <TrendingUp className="w-12 h-12 text-gray-400" />
-                      </div>
-                      <div className="relative z-10 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 shadow-lg shadow-amber-200 animate-pulse" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/80">
-                            {intent.intent} Intent
-                          </span>
-                        </div>
-                        <h4 className="text-xl font-black text-gray-900 leading-tight">
-                          &ldquo;{intent.query}&rdquo;
-                        </h4>
-                        <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                          {intent.context}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      <ExternalLink className="w-5 h-5" />
+                    </a>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </motion.div>
         )}
 
         {!data && !loading && !error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center pt-20 text-center"
-          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center pt-10 text-center"
+            >
             <div className="w-32 h-32 bg-indigo-50 rounded-full flex items-center justify-center mb-8 relative">
                <div className="absolute inset-0 bg-indigo-200/30 rounded-full animate-ping" />
                <Activity className="w-12 h-12 text-indigo-400 relative z-10" />
